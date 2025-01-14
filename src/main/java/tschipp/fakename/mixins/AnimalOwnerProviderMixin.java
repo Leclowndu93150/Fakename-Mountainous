@@ -11,7 +11,7 @@ import snownee.jade.api.EntityAccessor;
 @Mixin(AnimalOwnerProvider.class)
 public class AnimalOwnerProviderMixin {
 
-    @ModifyVariable(method = "appendServerData", at = @At(value = "STORE", ordinal = 0), ordinal = 0)
+    @ModifyVariable(method = "appendServerData", at = @At(value = "STORE", ordinal = 0), ordinal = 0,remap = false)
     private String modifyOwnerName(String name, CompoundTag data, EntityAccessor accessor) {
         if (name == null) return null;
 
