@@ -6,12 +6,12 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.network.PacketDistributor;
 
-@EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.FORGE)
+@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class FakenameEvents {
 
     @SubscribeEvent
@@ -19,13 +19,38 @@ public class FakenameEvents {
         CommandFakeName.register(event.getDispatcher());
     }
 
-    @SubscribeEvent
-    public static void renderName(PlayerEvent.NameFormat event) {
+    @SubscribeEvent(priority = EventPriority.NORMAL)
+    public static void onNameFormat(PlayerEvent.NameFormat event) {
         CompoundTag tag = event.getEntity().getPersistentData();
-        if (tag.contains("fakename")) {
-            event.setDisplayname(Component.literal(tag.getString("fakename")));
-        } else {
-            event.setDisplayname(event.getUsername());
+        if (tag != null && tag.contains("fakename")) {
+            String fakename = tag.getString("fakename");
+            event.setDisplayname(Component.literal(
+                    FakeName.formatNameWithDimension(event.getEntity(), fakename)
+            ));
+        }
+    }
+
+    @SubscribeEvent(priority = EventPriority.NORMAL)
+    public static void onTabNameFormat(PlayerEvent.TabListNameFormat event) {
+        CompoundTag tag = event.getEntity().getPersistentData();
+        if (tag != null && tag.contains("fakename")) {
+            String fakename = tag.getString("fakename");
+            event.setDisplayName(Component.literal(
+                    FakeName.formatNameWithDimension(event.getEntity(), fakename)
+            ));
+        }
+    }
+
+    @SubscribeEvent
+    public static void onDimensionChange(PlayerEvent.PlayerChangedDimensionEvent event) {
+        Player player = event.getEntity();
+        if (!player.level().isClientSide) {
+            // Re-send the fakename packet to update everyone's tab list
+            if (player.getPersistentData().contains("fakename")) {
+                String fakename = player.getPersistentData().getString("fakename");
+                FakeName.sendPacket(player, fakename, 0);
+            }
+            player.refreshDisplayName();
         }
     }
 
@@ -35,18 +60,6 @@ public class FakenameEvents {
         if (!player.getCommandSenderWorld().isClientSide) {
             if (player.getPersistentData().contains("fakename")) {
                 FakeName.sendPacket(player, player.getPersistentData().getString("fakename"), 0);
-            } else {
-                String playerName = player.getGameProfile().getName();
-                for (String mapping : Config.SERVER.autoNameMappings.get()) {
-                    String[] parts = mapping.split("=", 2);
-                    if (parts.length == 2 && parts[0].trim().equals(playerName)) {
-
-                        String fakename = parts[1].trim().replace("&", "\u00a7") + "\u00a7r";
-                        player.getPersistentData().putString("fakename", fakename);
-                        FakeName.sendPacket(player, fakename, 0);
-                        break;
-                    }
-                }
             }
 
             for (Player other : player.getServer().getPlayerList().getPlayers()) {

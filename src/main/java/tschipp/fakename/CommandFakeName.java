@@ -51,7 +51,7 @@ public class CommandFakeName {
                         literal("clear")
                                 .then(
                                         Commands.argument("target", EntityArgument.players())
-                                                .requires(src -> { boolean b = src.hasPermission(Config.SERVER.commandPermissionLevelAll.get()); return b;})
+                                                .requires(src -> { boolean b = src.hasPermission(FakeNameConfig.SERVER.commandPermissionLevelAll.get()); return b;})
                                                 .executes((cmd) -> {
                                                     return handleClear(cmd.getSource(), EntityArgument.getPlayers(cmd, "target"));
                                                 })
@@ -71,7 +71,7 @@ public class CommandFakeName {
                         )
                         .then(
                                 Commands.argument("target", EntityArgument.players())
-                                .requires(src -> src.hasPermission(Config.SERVER.commandPermissionLevelAll.get()))
+                                .requires(src -> src.hasPermission(FakeNameConfig.SERVER.commandPermissionLevelAll.get()))
                                 .then(
                                         Commands.argument("fakename", StringArgumentType.string())
                                         .executes((cmd) -> {

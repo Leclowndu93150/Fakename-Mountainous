@@ -3,8 +3,11 @@ package tschipp.fakename;
 import java.util.function.Supplier;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.network.NetworkEvent.Context;
 
@@ -40,25 +43,27 @@ public class FakeNamePacket
         buf.writeInt(deleteFakename);
     }
 
-    public void handle(Supplier<Context> ctx)
-    {
+    public void handle(Supplier<Context> ctx) {
         ctx.get().enqueueWork(() -> {
-        	Minecraft mc = Minecraft.getInstance();
-
+            Minecraft mc = Minecraft.getInstance();
             Player toSync = (Player) mc.level.getEntity(entityId);
 
-            if (toSync != null)
-            {
+            if (toSync != null) {
                 ctx.get().setPacketHandled(true);
-
                 FakeName.performFakenameOperation(toSync, fakename, deleteFakename);
 
-                if(deleteFakename == 0)
-                    mc.player.connection.getPlayerInfo(toSync.getGameProfile().getId()).setTabListDisplayName(Component.literal(fakename));
-                else
-                    mc.player.connection.getPlayerInfo(toSync.getGameProfile().getId()).setTabListDisplayName(Component.literal(toSync.getGameProfile().getName()));
+                ClientPacketListener connection = mc.player.connection;
+                PlayerInfo playerInfo = connection.getPlayerInfo(toSync.getGameProfile().getId());
+                if (playerInfo != null) {
+                    if (deleteFakename == 0) {
+                        playerInfo.setTabListDisplayName(Component.literal(
+                                FakeName.formatNameWithDimension(toSync, fakename)
+                        ));
+                    } else {
+                        playerInfo.setTabListDisplayName(Component.literal(toSync.getGameProfile().getName()));
+                    }
+                }
             }
-
         });
     }
 

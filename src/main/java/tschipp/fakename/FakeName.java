@@ -1,5 +1,6 @@
 package tschipp.fakename;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.commands.synchronization.ArgumentTypeInfo;
 import net.minecraft.commands.synchronization.ArgumentTypeInfos;
 import net.minecraft.commands.synchronization.SingletonArgumentInfo;
@@ -36,17 +37,17 @@ public class FakeName
     private static final RegistryObject<SingletonArgumentInfo<FakenameArgumentType>> FAKENAME_ARGUMENT = COMMAND_ARGUMENT_TYPES.register("fakename", () -> {
     	return ArgumentTypeInfos.registerByClass(FakenameArgumentType.class, SingletonArgumentInfo.contextFree(FakenameArgumentType::fakename));
     });
-    
-    
-    
+
+
+
     public FakeName()
     {
         FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setup);
 
-        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, Config.SERVER_SPEC);
+        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, FakeNameConfig.SERVER_SPEC);
 
         info = ModLoadingContext.get().getActiveContainer().getModInfo();
-        
+
         COMMAND_ARGUMENT_TYPES.register(FMLJavaModLoadingContext.get().getModEventBus());
     }
 
@@ -54,9 +55,9 @@ public class FakeName
     {
         event.enqueueWork(() -> {
         	 FakeName.network = NetworkRegistry.newSimpleChannel(new ResourceLocation(FakeName.MODID, "fakenamechannel"), () -> FakeName.info.getVersion().toString(), s -> true, s -> true);
-             FakeName.network.registerMessage(0, FakeNamePacket.class, FakeNamePacket::toBytes, FakeNamePacket::new, FakeNamePacket::handle);        
+             FakeName.network.registerMessage(0, FakeNamePacket.class, FakeNamePacket::toBytes, FakeNamePacket::new, FakeNamePacket::handle);
         });
-       
+
     }
 
     public static void sendPacket(Player player, String fakename, int operation)
@@ -81,6 +82,43 @@ public class FakeName
         }
     }
 
+    public static String formatNameWithDimension(Player player, String name) {
+        if (!FakeNameConfig.SERVER.showDimension.get()) {
+            return name;
+        }
 
+        ResourceLocation dimension = player.level().dimension().location();
+        String dimName = getDimensionAlias(dimension);
+        ChatFormatting color = getDimensionColor(dimension);
+
+        return FakeNameConfig.SERVER.dimensionFormat.get()
+                .replace("%n", name)
+                .replace("%d", color + dimName);
+    }
+
+    private static String getDimensionAlias(ResourceLocation dimension) {
+        String dimId = dimension.toString();
+        for (String alias : FakeNameConfig.SERVER.dimensionAliases.get()) {
+            String[] parts = alias.split("=", 2);
+            if (parts[0].equals(dimId)) {
+                return parts[1];
+            }
+        }
+        return formatDimensionName(dimension.getPath());
+    }
+
+    private static String formatDimensionName(String name) {
+        name = name.replace("_", " ").replace("the ", "");
+        return Character.toUpperCase(name.charAt(0)) + name.substring(1);
+    }
+
+    private static ChatFormatting getDimensionColor(ResourceLocation dimension) {
+        return switch (dimension.toString()) {
+            case "minecraft:overworld" -> FakeNameConfig.SERVER.overworldColor.get();
+            case "minecraft:the_nether" -> FakeNameConfig.SERVER.netherColor.get();
+            case "minecraft:the_end" -> FakeNameConfig.SERVER.endColor.get();
+            default -> ChatFormatting.GRAY;
+        };
+    }
 
 }

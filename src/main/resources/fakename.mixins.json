@@ -4,8 +4,7 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "fakename.refmap.json",
   "mixins": [
-    "AnimalOwnerProviderMixin",
-    "SDLinkServerEventsMixin"
+    "AnimalOwnerProviderMixin"
   ],
   "client": [
     "SocialInteractionsPlayerListMixin"

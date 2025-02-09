@@ -99,6 +99,7 @@ dependencies {
     implementation "curse.maven:simple-discord-link-bot-forge-fabric-spigot-541320:5958905"
     implementation fg.deobf("curse.maven:craterlib-867099:5964468")
     implementation fg.deobf("curse.maven:jade-324717:5876199")
+    //implementation fg.deobf("curse.maven:dimension-viewer-857799:4632484")
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
 
